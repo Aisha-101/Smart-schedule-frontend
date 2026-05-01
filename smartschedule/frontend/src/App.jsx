@@ -10,6 +10,9 @@ import Navbar from "./components/Navbar";
 import Booking from "./pages/Booking";
 import SpecialistDashboard from "./pages/SpecialistDashboard";
 import ClientDashboard from "./pages/ClientDashboard";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import VerifyEmail from "./pages/VerifyEmail";
 
 function App() {
   return (
@@ -18,6 +21,9 @@ function App() {
         <Route path="/" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path ="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/verify-email" element={<VerifyEmail />} /> 
         <Route path="/booking" element={<Booking />} />
         <Route path="/specialist" element={<SpecialistDashboard />} />
         <Route

@@ -3,27 +3,64 @@ import API from "../api/api";
 import MainLayout from "../layouts/MainLayout";
 import { getUser } from "../api/auth";
 
+
 export default function SpecialistDashboard() {
   const user = getUser();
+  const userId = user?.id;
+
+
 
   const [appointments, setAppointments] = useState([]);
   const [availability, setAvailability] = useState([]);
-
-  // availability form
-  const [date, setDate] = useState("");
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate()+1);
+  const [date,setDate] = useState(tomorrow.toISOString().split("T")[0]);
   const [start_time, setStartTime] = useState("");
   const [end_time, setEndTime] = useState("");
-
-  // service form
   const [serviceName, setServiceName] = useState("");
+  const [duration, setDuration] = useState("");
   const [price, setPrice] = useState("");
+  const [error, setError] = useState("");
+  const [services, setServices] = useState([]);
+
+
+    const formatDate = (dateStr) => {
+    if (!dateStr) return "-";
+
+    return new Date(dateStr)
+    .toISOString()
+    .split("T")[0];
+    };
+
+
+    const formatTime24 = (time) => {
+    if(!time) return "-";
+
+    return new Date(`1970-01-01T${time}`)
+    .toLocaleTimeString(
+    "lt-LT",
+    {
+        hour:"2-digit",
+        minute:"2-digit",
+        hour12:false
+    }
+    );
+    }
 
   const load = async () => {
-    const appt = await API.get(`/appointments?specialist_id=${user.id}`);
-    const avail = await API.get(`/specialists/${user.id}/schedule`);
+    try {
+      const appt = await API.get("/appointments/my");
+      const avail = await API.get(`/specialists/${userId}/schedule`);
 
-    setAppointments(appt.data);
-    setAvailability(avail.data);
+      const servicesRes = await API.get("/my-services");
+      
+      setAppointments(appt.data);
+      setAvailability(avail.data);
+      setServices(servicesRes.data);
+
+    } catch (err) {
+      console.error("Error loading data:", err);
+    }
   };
 
   useEffect(() => {
@@ -32,117 +69,285 @@ export default function SpecialistDashboard() {
 
   // CREATE AVAILABILITY
   const addAvailability = async () => {
-    await API.post(`/specialists/${user.id}/schedule`, {
-      date,
-      start_time,
-      end_time,
+    setError("");
+
+    if (!date || !start_time || !end_time) {
+        setError("All fields are required");
+        return;
+    }
+
+    
+    if (start_time >= end_time) {
+        setError("End time must be after start time");
+        return;
+    }
+
+    try {
+        console.log("Sending:", { date, start_time, end_time });
+
+        await API.post(`/specialists/${userId}/schedule`, {
+        date,
+        start_time,
+        end_time,
+        });
+
+        setDate("");
+        setStartTime("");
+        setEndTime("");
+        load();
+    } catch (err) {
+        console.error("Full error:", err.response);
+        setError(err.response?.data?.error || "Failed to add availability");
+    }
+    };
+
+  const generateTimes = () => {
+    let times = [];
+
+    for(let h=8; h<=20; h++){
+    ["00","30"].forEach(m=>{
+        times.push(
+            `${String(h).padStart(2,"0")}:${m}`
+        );
     });
+    }
 
-    setDate("");
-    setStartTime("");
-    setEndTime("");
+    return times;
+    };
 
-    load();
-  };
-  
+const timeOptions = generateTimes();
   // CREATE SERVICE
   const addService = async () => {
-    await API.post(`/services`, {
-      name: serviceName,
-      price: price,
-      specialist_id: user.id,
-    });
+    if (!serviceName || !duration || !price) {
+      setError("All service fields are required");
+      return;
+    }
 
-    setServiceName("");
-    setPrice("");
+    try {
+      await API.post(`/services`, {
+        name: serviceName,
+        duration: parseInt(duration),
+        price: parseFloat(price),
+      });
+
+      setServiceName("");
+      setDuration("");
+      setPrice("");
+      setError("");
+      load();
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to create service");
+    }
   };
 
   return (
     <MainLayout>
-      <h1 className="text-2xl mb-6">Specialist Dashboard</h1>
+      <h1 className="text-2xl font-semibold mb-6">Specialist Dashboard</h1>
 
       {/* ================= APPOINTMENTS ================= */}
-      <div className="bg-white p-4 rounded shadow mb-6">
-        <h2 className="text-lg mb-2">Appointments</h2>
+      <div className="bg-white p-6 rounded-lg shadow mb-6">
+        <h2 className="text-lg font-semibold mb-4">My Appointments</h2>
 
-        {appointments.length === 0 && <p>No appointments</p>}
-
-        {appointments.map((a) => (
-          <div key={a.id} className="border p-2 mb-2 rounded">
-            <div>
-              {a.date} | {a.start_time} - {a.end_time}
+        {appointments.length === 0 ? (
+          <p className="text-gray-500">No appointments</p>
+        ) : (
+          appointments.map((a) => (
+            <div key={a.id} className="border p-4 mb-3 rounded-lg bg-blue-50">
+              <div className="font-semibold text-blue-700">
+                📅 {formatDate(a.start_time?.split("T")[0])}
+              </div>
+              <div className="text-sm mt-2">
+                ⏰ {formatTime24(a.start_time)} - {formatTime24(a.end_time)}
+              </div>
+              <div className="text-sm">👤 Client: {a.client?.name}</div>
+              <div className="text-sm">📍 Status: {a.status}</div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
 
       {/* ================= AVAILABILITY ================= */}
-      <div className="bg-white p-4 rounded shadow mb-6">
-        <h2 className="text-lg mb-2">Set Availability</h2>
+      <div className="bg-white p-6 rounded-lg shadow mb-6">
+        <h2 className="text-lg font-semibold mb-4">Set Availability</h2>
 
-        <input
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-          className="border p-2 mr-2"
-        />
+        {error && (
+          <div className="bg-red-100 text-red-700 p-3 mb-4 rounded-lg border border-red-300">
+            ❌ {error}
+          </div>
+        )}
 
-        <input
-          type="time"
-          value={start_time}
-          onChange={(e) => setStartTime(e.target.value)}
-          className="border p-2 mr-2"
-        />
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              📅 Date 
+            </label>
+            <input
+                type="date"
+                value={date}
+                min={tomorrow.toISOString().split("T")[0]}
+                onChange={(e)=>setDate(e.target.value)}
+            />
+            {date && (
+              <small className="text-gray-600">{formatDate(date)}</small>
+            )}
+          </div>
 
-        <input
-          type="time"
-          value={end_time}
-          onChange={(e) => setEndTime(e.target.value)}
-          className="border p-2 mr-2"
-        />
+          <div>
+            <label className="block text-sm font-medium mb-1">
+                🕐 Start Time
+            </label>
 
-        <button
-          onClick={addAvailability}
-          className="bg-blue-500 text-white px-3 py-2 rounded"
-        >
-          Add
-        </button>
+            <select
+                value={start_time}
+                onChange={(e)=>setStartTime(e.target.value)}
+                className="border p-2 w-full rounded"
+            >
+            <option value="">Select time</option>
 
-        <div className="mt-4">
-          {availability.map((a) => (
-            <div key={a.id} className="border p-2 mb-2 rounded">
-              {a.date} | {a.start_time} - {a.end_time}
+            {timeOptions.map(t=>(
+                <option key={t} value={t}>
+                {t}
+                </option>
+            ))}
+
+            </select>
             </div>
-          ))}
+
+          <div>
+            <label className="block text-sm font-medium mb-1">
+                🕐 End Time
+            </label>
+
+            <select
+                value={end_time}
+                onChange={(e)=>setEndTime(e.target.value)}
+                className="border p-2 w-full rounded"
+            >
+            <option value="">Select time</option>
+
+            {timeOptions.map(t=>(
+                <option key={t} value={t}>
+                {t}
+                </option>
+            ))}
+
+            </select>
+            </div>
+
+          <div className="flex items-end">
+            <button
+              onClick={addAvailability}
+              className="bg-green-500 text-white px-4 py-2 rounded w-full hover:bg-green-600 transition font-semibold"
+            >
+              ➕ Add Slot
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-6">
+          <h3 className="font-semibold mb-3 text-gray-800">
+            Your Available Slots:
+          </h3>
+          {availability.length === 0 ? (
+            <p className="text-gray-500 italic">No availability set</p>
+          ) : (
+            availability.map((a) => (
+              <div
+                key={a.id}
+                className="border p-4 mb-3 rounded-lg bg-green-50 border-green-300"
+              >
+                <div className="flex justify-between items-center">
+                  <div>
+                    <span className="font-semibold text-green-700">
+                      📅 {formatDate(a.date)}
+                    </span>
+                    <span className="ml-4 text-gray-700">
+                      🕐 {formatTime24(a.start_time)} - {formatTime24(a.end_time)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
 
       {/* ================= SERVICES ================= */}
-      <div className="bg-white p-4 rounded shadow">
-        <h2 className="text-lg mb-2">Create Service</h2>
+      <div className="bg-white p-6 rounded-lg shadow">
+        <h2 className="text-lg font-semibold mb-4">Create Service</h2>
 
-        <input
-          type="text"
-          placeholder="Service name"
-          value={serviceName}
-          onChange={(e) => setServiceName(e.target.value)}
-          className="border p-2 mr-2"
-        />
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+          <input
+            type="text"
+            placeholder="Service Name"
+            value={serviceName}
+            onChange={(e) => setServiceName(e.target.value)}
+            className="border p-2 rounded"
+          />
 
-        <input
-          type="number"
-          placeholder="Price"
-          value={price}
-          onChange={(e) => setPrice(e.target.value)}
-          className="border p-2 mr-2"
-        />
+          <input
+            type="number"
+            placeholder="Duration (minutes)"
+            value={duration}
+            onChange={(e) => setDuration(e.target.value)}
+            className="border p-2 rounded"
+            min="15"
+            step="15"
+          />
 
-        <button
-          onClick={addService}
-          className="bg-green-500 text-white px-3 py-2 rounded"
-        >
-          Add Service
-        </button>
+          <input
+            type="number"
+            placeholder="Price (€)"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            className="border p-2 rounded"
+            min="0"
+            step="0.01"
+          />
+
+          <button
+            onClick={addService}
+            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition font-semibold col-span-1 md:col-span-2"
+          >
+            ➕ Add Service
+          </button>
+        </div>
+
+        <div className="mt-6">
+            <h3 className="font-semibold mb-3 text-gray-800">
+                Your Services:
+            </h3>
+
+            {services.length === 0 ? (
+            <p className="text-gray-500 italic">
+                No services created yet
+            </p>
+            ) : (
+                services.map(service => (
+                <div
+                key={service.id}
+                className="border p-4 mb-3 rounded-lg bg-blue-50 border-blue-300"
+                >
+                    <div className="flex justify-between items-center">
+                        <div>
+                            <div className="font-semibold text-blue-700">
+                                ✂ {service.name}
+                            </div>
+
+                            <div className="text-sm text-gray-700 mt-1">
+                            ⏱ {service.duration} mins
+                            </div>
+
+                            <div className="text-sm text-gray-700">
+                            💶 €{service.price}
+                            </div>
+
+                         </div>
+                    </div>
+                </div>
+                ))
+                )}
+            </div>
       </div>
     </MainLayout>
   );

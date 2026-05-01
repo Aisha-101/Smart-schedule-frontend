@@ -49,11 +49,10 @@ export default function ClientDashboard(){
     const bookSlot=async(slot)=>{
 
     await API.post("/appointments",{
-        client_id: user.id,
         specialist_id:specialistId,
-        services:[serviceId],
         start_time:slot.start,
-        end_time:slot.end
+        end_time:slot.end,
+        services:[serviceId],
     });
 
     alert("Appointment booked");
