@@ -22,7 +22,8 @@ export default function SpecialistDashboard() {
   const [price, setPrice] = useState("");
   const [error, setError] = useState("");
   const [services, setServices] = useState([]);
-
+  const [message, setMessage] = useState("");
+  const [status, setStatus] = useState("");
 
     const formatDate = (dateStr) => {
     if (!dateStr) return "-";
@@ -33,19 +34,19 @@ export default function SpecialistDashboard() {
     };
 
 
-    const formatTime24 = (time) => {
-    if(!time) return "-";
+    const formatTime24 = (value) => {
+      if (!value) return "-";
 
-    return new Date(`1970-01-01T${time}`)
-    .toLocaleTimeString(
-    "lt-LT",
-    {
-        hour:"2-digit",
-        minute:"2-digit",
-        hour12:false
-    }
-    );
-    }
+      if (value.includes(" ")) {
+        return value.split(" ")[1].slice(0, 5);
+      }
+
+      if (value.includes("T")) {
+        return value.split("T")[1].slice(0, 5);
+      }
+
+      return value.slice(0, 5);
+    };
 
   const load = async () => {
     try {
@@ -140,6 +141,22 @@ const timeOptions = generateTimes();
     }
   };
 
+  const updateAppointmentStatus = async (appointmentId, status) => {
+    setError("");
+
+
+    try {
+      await API.put(`/appointments/${appointmentId}/status`, {
+        status,
+      });
+
+      load();
+    } catch (err) {
+      console.error(err.response?.data);
+      setError(err.response?.data?.message || "Failed to update appointment status.");
+    }
+  };
+
   return (
     <MainLayout>
       <h1 className="text-2xl font-semibold mb-6">Specialist Dashboard</h1>
@@ -161,8 +178,39 @@ const timeOptions = generateTimes();
               </div>
               <div className="text-sm">👤 Client: {a.client?.name}</div>
               <div className="text-sm">📍 Status: {a.status}</div>
-            </div>
-          ))
+
+                  {a.status === "LATE" && (
+                    <div className="text-sm text-yellow-700">
+                      ⏱ Delay: {a.delay_minutes} min
+                    </div>
+                  )}
+
+                  {a.status !== "CANCELED" && (
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      <button
+                        onClick={() => updateAppointmentStatus(a.id, "COMPLETED")}
+                        className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition"
+                      >
+                        Completed
+                      </button>
+
+                      <button
+                        onClick={() => updateAppointmentStatus(a.id, "LATE")}
+                        className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 transition"
+                      >
+                        Late
+                      </button>
+
+                      <button
+                        onClick={() => updateAppointmentStatus(a.id, "NO_SHOW")}
+                        className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition"
+                      >
+                        No-show
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))
         )}
       </div>
 

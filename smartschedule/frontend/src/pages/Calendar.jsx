@@ -9,7 +9,7 @@ export default function Calendar() {
   const [events, setEvents] = useState([]);
 
   const loadAppointments = async () => {
-    const res = await API.get("/appointments");
+    const res = await API.get("/appointments/my");
 
     setEvents(
       res.data.map((a) => ({

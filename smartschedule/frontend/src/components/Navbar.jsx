@@ -18,11 +18,11 @@ export default function Navbar() {
         <button onClick={() => nav("/dashboard")}>Dashboard</button>
         <button onClick={() => nav("/calendar")}>Calendar</button>
 
-        {user?.role === "admin" && (
+        {user?.role === "ADMIN" && (
           <button onClick={() => nav("/admin")}>Admin</button>
         )}
 
-        {user?.role === "specialist" && (
+        {user?.role === "SPECIALIST" && (
           <button onClick={() => nav("/calendar")}>My Schedule</button>
         )}
 

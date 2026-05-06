@@ -47,7 +47,7 @@ function App() {
         <Route
           path="/admin"
           element={
-            <RoleRoute role="admin">
+            <RoleRoute role="ADMIN">
               <Admin />
             </RoleRoute>
           }

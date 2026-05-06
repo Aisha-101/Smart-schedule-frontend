@@ -150,6 +150,7 @@ export default function Register() {
               name="name"
               className="w-full border rounded-lg p-2"
               onChange={handleChange}
+              placeholder="Name Surname"
             />
           </div>
 
@@ -161,6 +162,7 @@ export default function Register() {
               type="email"
               className="w-full border rounded-lg p-2"
               onChange={handleChange}
+              placeholder="you@example.com"
             />
           </div>
 
@@ -175,6 +177,7 @@ export default function Register() {
                 type={showPassword ? "text" : "password"}
                 onChange={handleChange}
                 className="w-full border rounded-lg p-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Create a strong password"
             />
 
            <button
@@ -182,6 +185,7 @@ export default function Register() {
                 title={showPassword ? "Hide password" : "Show password"}
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 top-9 text-gray-500 hover:text-gray-700 transition"
+                placeholder="Show password"
             >
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
@@ -224,6 +228,7 @@ export default function Register() {
                 type="password"
                 onChange={handleChange}
                 className="w-full border rounded-lg p-2"
+                placeholder="Re-enter your password"
             />
 
             {form.password_confirmation && (
