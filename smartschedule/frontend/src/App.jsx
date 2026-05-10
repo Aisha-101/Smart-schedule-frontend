@@ -16,6 +16,7 @@ import VerifyEmail from "./pages/VerifyEmail";
 import ClientAppointments from "./pages/ClientAppointments";
 import SpecialistAppointments from "./pages/SpecialistAppointments";
 import SpecialistSchedule from "./pages/SpecialistSchedule";
+import AppointmentEmailConfirm from "./pages/AppointmentEmailConfirm";
 
 
 function App() {
@@ -28,6 +29,10 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/verify-email" element={<VerifyEmail />} /> 
+        <Route
+          path="/appointments/confirm-email/:id/:hash"
+          element={<AppointmentEmailConfirm />}
+        />
         <Route path="/booking" element={<Booking />} />
         <Route path="/specialist" element={<SpecialistDashboard />} />
         <Route path="/specialist/appointments" element={<SpecialistAppointments />} />

@@ -58,6 +58,21 @@ export default function ClientAppointments() {
     }
   };
 
+  const requestEmailConfirmation = async (id) => {
+    setError("");
+    setMessage("");
+
+    try {
+      await API.post(`/appointments/${id}/confirm-email`);
+      setMessage("Confirmation email sent. Please check your inbox to confirm.");
+    } catch (err) {
+      console.log(err.response?.data);
+      setError(
+        err.response?.data?.message || "Failed to send confirmation email."
+      );
+    }
+  };
+
   useEffect(() => {
     loadAppointments();
   }, []);
@@ -108,6 +123,14 @@ export default function ClientAppointments() {
 
                 {["SCHEDULED", "CONFIRMED"].includes(a.status) && (
                     <div className="flex gap-2 mt-3">
+                    {a.status === "SCHEDULED" && (
+                      <button
+                        onClick={() => requestEmailConfirmation(a.id)}
+                        className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition"
+                      >
+                        Confirm by Email
+                      </button>
+                    )}
                     <button
                         onClick={() => setAppointmentToCancel(a)}
                         className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
