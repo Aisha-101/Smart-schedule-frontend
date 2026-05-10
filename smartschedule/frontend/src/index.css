@@ -1,3 +1,42 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.fc {
+  font-size: 14px;
+}
+
+.fc .fc-toolbar-title {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.fc .fc-timegrid-slot {
+  height: 46px;
+}
+
+.fc .fc-timegrid-event {
+  min-height: 34px;
+  border-radius: 8px;
+  padding: 4px 6px;
+}
+
+.fc .fc-event-main {
+  overflow: hidden;
+}
+
+.fc .fc-event-title,
+.fc .fc-event-time {
+  font-size: 12px;
+  line-height: 1.15rem;
+  white-space: normal;
+}
+
+.fc .fc-timegrid-event-short .fc-event-title {
+  display: none;
+}
+
+.fc .fc-col-header-cell-cushion,
+.fc .fc-daygrid-day-number {
+  color: #374151;
+}

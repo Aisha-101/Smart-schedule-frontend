@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
 import API from "../api/api";
 import MainLayout from "../layouts/MainLayout";
+import FullCalendar from "@fullcalendar/react";
+import dayGridPlugin from "@fullcalendar/daygrid";
+import timeGridPlugin from "@fullcalendar/timegrid";
+import interactionPlugin from "@fullcalendar/interaction";
+import { getScoreColor, getScoreBorderColor, appointmentStatusColor } from "../utils/calendarHelpers";
+import { Link } from "react-router-dom";
 
 export default function ClientDashboard() {
   const tomorrow = new Date();
@@ -9,7 +15,6 @@ export default function ClientDashboard() {
   const [date, setDate] = useState(tomorrow.toISOString().split("T")[0]);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [mode, setMode] = useState("book");
-
   const [appointments, setAppointments] = useState([]);
   const [recommendedSlots, setRecommendedSlots] = useState([]);
   const [services, setServices] = useState([]);
@@ -79,6 +84,17 @@ export default function ClientDashboard() {
     loadAppointments();
     loadServices();
     loadSpecialists();
+
+    const saved = localStorage.getItem("rescheduleAppointment");
+
+    if (saved) {
+        const appointment = JSON.parse(saved);
+        setSelectedAppointment(appointment);
+        setSpecialistId(appointment.specialist_id);
+        setMode("reschedule");
+        setMessage("Select a new date and click Find Best Times to reschedule this appointment.");
+        localStorage.removeItem("rescheduleAppointment");
+    }
   }, []);
 
   const getRecommendations = async () => {
@@ -172,10 +188,61 @@ export default function ClientDashboard() {
     }
   };
 
+  const calendarEvents = [
+    ...appointments.map((a) => ({
+        id: `appointment-${a.id}`,
+        title: `${a.status}`,
+        start: a.start_time,
+        backgroundColor: appointmentStatusColor(a.status),
+        borderColor: appointmentStatusColor(a.status),
+        textColor: "#ffffff",
+        extendedProps: {
+            type: "appointment",
+            appointment: a,
+        },
+    })),
+
+    ...recommendedSlots.map((slot, index) => ({
+        id: `slot-${index}`,
+        title: `${slot.score > 0.8 ? "Best" : slot.score > 0.6 ? "Medium" : "Low"} · ${slot.score}`,
+        start: slot.start,
+        end: slot.end,
+        backgroundColor: getScoreColor(slot.score),
+        borderColor: getScoreBorderColor(slot.score),
+        textColor: "#111827",
+        extendedProps: {
+            type: "recommendation",
+            slot,
+        },
+    })),
+  ];
+
+  const handleCalendarEventClick = (info) => {
+    const type = info.event.extendedProps.type;
+
+    if (type !== "recommendation") return;
+
+    const slot = info.event.extendedProps.slot;
+
+    if (mode === "reschedule") {
+        rescheduleSlot(slot);
+    } else {
+        bookSlot(slot);
+    }
+  };
+
   return (
     <MainLayout>
       <h1 className="text-2xl font-semibold mb-6">Client Dashboard</h1>
 
+        <div className="mb-6">
+            <Link
+                to="/my-appointments"
+                className="inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+            >
+                View My Appointments
+            </Link>
+        </div>
       {message && (
         <div className="bg-green-100 text-green-700 p-3 mb-4 rounded-lg border border-green-300">
           ✅ {message}
@@ -338,57 +405,43 @@ export default function ClientDashboard() {
         </div>
       </div>
 
-      {/* ================= MY APPOINTMENTS ================= */}
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h2 className="text-lg font-semibold mb-4">My Appointments</h2>
+      <div className="bg-white p-6 rounded-lg shadow mb-6">
+        <h2 className="text-lg font-semibold mb-4">Calendar View</h2>
 
-        {appointments.length === 0 ? (
-          <p className="text-gray-500">No appointments yet.</p>
-        ) : (
-          appointments.map((a) => (
-            <div key={a.id} className="border p-4 mb-3 rounded-lg bg-blue-50">
-              <div className="font-semibold text-blue-700">
-                📅 {formatDateFromDateTime(a.start_time)}
-              </div>
+        <div className="mb-3 text-sm text-gray-600">
+            <span className="inline-block px-2 py-1 rounded bg-green-100 mr-2">
+            Best score
+            </span>
+            <span className="inline-block px-2 py-1 rounded bg-yellow-100 mr-2">
+            Medium score
+            </span>
+            <span className="inline-block px-2 py-1 rounded bg-red-100 mr-2">
+            Low score
+            </span>
+            <span className="inline-block px-2 py-1 rounded bg-blue-100">
+            Your appointments
+            </span>
+        </div>
 
-              <div className="text-sm mt-2">
-                🕐 {formatTime24(a.start_time)} - {formatTime24(a.end_time)}
-              </div>
-
-              <div className="text-sm">
-                👤 Specialist: {a.specialist?.name || "-"}
-              </div>
-
-              <div className="text-sm">📍 Status: {a.status}</div>
-
-              {a.status === "SCHEDULED" && (
-                <div className="flex gap-2 mt-3">
-                    <button
-                    onClick={() => cancelAppointment(a.id)}
-                    className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
-                    >
-                    Cancel
-                    </button>
-
-                    <button
-                    onClick={() => {
-                        setSelectedAppointment(a);
-                        setSpecialistId(a.specialist_id);
-                        setMode("reschedule");
-                        setRecommendedSlots([]);
-                        setMessage("Select a new date and click Find Best Times.");
-                        setError("");
-                    }}
-                    className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 transition"
-                    >
-                    Reschedule
-                    </button>
-                </div>
-                )}
-            </div>
-          ))
-        )}
-      </div>
+        <FullCalendar
+            plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+            initialView="timeGridWeek"
+            events={calendarEvents}
+            eventClick={handleCalendarEventClick}
+            height="auto"
+            slotMinTime="08:00:00"
+            slotMaxTime="21:00:00"
+            slotDuration="00:30:00"
+            slotLabelInterval="00:30:00"
+            allDaySlot={false}
+            nowIndicator={true}
+            headerToolbar={{
+            left: "prev,next today",
+            center: "title",
+            right: "dayGridMonth,timeGridWeek,timeGridDay",
+            }}
+        />
+        </div>
     </MainLayout>
   );
 }

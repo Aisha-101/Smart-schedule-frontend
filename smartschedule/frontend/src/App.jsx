@@ -3,16 +3,20 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Calendar from "./pages/Calendar";
-import Admin from "./pages/Admin";
+import AdminDashboard from "./pages/AdminDashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 import RoleRoute from "./components/RoleRoute";
-import Navbar from "./components/Navbar";
+import Navbar from "./layouts/Navbar";
 import Booking from "./pages/Booking";
 import SpecialistDashboard from "./pages/SpecialistDashboard";
 import ClientDashboard from "./pages/ClientDashboard";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import VerifyEmail from "./pages/VerifyEmail";
+import ClientAppointments from "./pages/ClientAppointments";
+import SpecialistAppointments from "./pages/SpecialistAppointments";
+import SpecialistSchedule from "./pages/SpecialistSchedule";
+
 
 function App() {
   return (
@@ -26,6 +30,17 @@ function App() {
         <Route path="/verify-email" element={<VerifyEmail />} /> 
         <Route path="/booking" element={<Booking />} />
         <Route path="/specialist" element={<SpecialistDashboard />} />
+        <Route path="/specialist/appointments" element={<SpecialistAppointments />} />
+        <Route path="/specialist/schedule" element={<SpecialistSchedule />} />
+        <Route path="/admin" element={<AdminDashboard />} />
+        <Route
+          path="/my-appointments"
+          element={
+            <ProtectedRoute allowedRoles={["CLIENT"]}>
+              <ClientAppointments />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/dashboard"
           element={
@@ -44,14 +59,7 @@ function App() {
           }
         />
 
-        <Route
-          path="/admin"
-          element={
-            <RoleRoute role="ADMIN">
-              <Admin />
-            </RoleRoute>
-          }
-        />
+        
       </Routes>
     </BrowserRouter>
   );
