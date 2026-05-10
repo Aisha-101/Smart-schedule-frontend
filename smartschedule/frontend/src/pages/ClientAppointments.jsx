@@ -106,7 +106,7 @@ export default function ClientAppointments() {
                     </div>
                 )}
 
-                {a.status === "SCHEDULED" && (
+                {["SCHEDULED", "CONFIRMED"].includes(a.status) && (
                     <div className="flex gap-2 mt-3">
                     <button
                         onClick={() => setAppointmentToCancel(a)}

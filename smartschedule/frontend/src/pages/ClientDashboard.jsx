@@ -17,6 +17,8 @@ export default function ClientDashboard() {
   const [mode, setMode] = useState("book");
   const [appointments, setAppointments] = useState([]);
   const [recommendedSlots, setRecommendedSlots] = useState([]);
+  const [recommendationWarnings, setRecommendationWarnings] = useState([]);
+  const [alternativeDaySlots, setAlternativeDaySlots] = useState([]);
   const [services, setServices] = useState([]);
   const [specialists, setSpecialists] = useState([]);
 
@@ -111,9 +113,16 @@ export default function ClientDashboard() {
         `/recommendations?specialist_id=${specialistId}&service_id=${serviceId}&date=${date}`
       );
 
-      setRecommendedSlots(res.data);
+      const payload = Array.isArray(res.data)
+        ? { slots: res.data, warnings: [], alternative_day_slots: [] }
+        : res.data;
 
-      if (res.data.length === 0) {
+
+      setRecommendedSlots(payload.slots || []);
+      setRecommendationWarnings(payload.warnings || []);
+      setAlternativeDaySlots(payload.alternative_day_slots || []);
+
+      if ((payload.slots || []).length === 0) {
         setMessage("No available slots found for the selected date.");
       } else {
         setMessage("Available times loaded successfully.");
@@ -139,6 +148,9 @@ export default function ClientDashboard() {
       setMessage("Appointment booked successfully.");
       loadAppointments();
       setRecommendedSlots([]);
+      setRecommendationWarnings([]);
+      setAlternativeDaySlots([]);
+
     } catch (err) {
       console.log(err.response?.data);
       setError(err.response?.data?.message || "Failed to book appointment.");
@@ -164,6 +176,8 @@ export default function ClientDashboard() {
       setSelectedAppointment(null);
       setMode("book");
       setRecommendedSlots([]);
+      setRecommendationWarnings([]);
+      setAlternativeDaySlots([]);
       loadAppointments();
     } catch (err) {
       console.log(err.response?.data);
@@ -276,6 +290,8 @@ export default function ClientDashboard() {
                 setMode("book");
                 setSelectedAppointment(null);
                 setRecommendedSlots([]);
+                setRecommendationWarnings([]);
+                setAlternativeDaySlots([]);
                 setMessage("");
                 setError("");
               }}
@@ -353,6 +369,14 @@ export default function ClientDashboard() {
           </div>
         </div>
 
+        {recommendationWarnings.length > 0 && (
+          <div className="mb-4 bg-yellow-100 text-yellow-800 p-4 rounded-lg border border-yellow-300">
+            {recommendationWarnings.map((warning, idx) => (
+              <div key={idx}>⚠️ {warning}</div>
+            ))}
+          </div>
+        )}
+
         {/* RECOMMENDED SLOTS */}
         <div className="mt-6">
           <h3 className="font-semibold mb-3 text-gray-800">
@@ -404,6 +428,20 @@ export default function ClientDashboard() {
           )}
         </div>
       </div>
+
+      {alternativeDaySlots.length > 0 && (
+        <div className="bg-white p-6 rounded-lg shadow mb-6">
+          <h2 className="text-lg font-semibold mb-4">Alternative Day Suggestions</h2>
+          <p className="text-sm text-gray-600 mb-3">These are optional slots from less busy upcoming days.</p>
+
+          {alternativeDaySlots.map((slot, i) => (
+            <div key={`alt-${i}`} className="border p-4 mb-3 rounded-lg bg-indigo-50 border-indigo-300">
+              <div className="font-semibold text-gray-800">📅 {formatDateFromDateTime(slot.start)}</div>
+              <div className="text-sm text-gray-700 mt-1">🕐 {formatTime24(slot.start)} - {formatTime24(slot.end)}</div>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="bg-white p-6 rounded-lg shadow mb-6">
         <h2 className="text-lg font-semibold mb-4">Calendar View</h2>

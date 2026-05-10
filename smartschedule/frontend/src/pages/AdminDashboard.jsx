@@ -427,6 +427,7 @@ export default function AdminDashboard() {
           >
             <option value="ALL">All statuses</option>
             <option value="SCHEDULED">Scheduled</option>
+            <option value="CONFIRMED">Confirmed</option>
             <option value="COMPLETED">Completed</option>
             <option value="CANCELED">Canceled</option>
             <option value="NO_SHOW">No-show</option>

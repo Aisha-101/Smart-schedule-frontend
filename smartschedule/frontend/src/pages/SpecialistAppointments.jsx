@@ -42,6 +42,7 @@ export default function SpecialistAppointments() {
       NO_SHOW: "no-show",
       CANCELED: "canceled",
       SCHEDULED: "scheduled",
+      CONFIRMED: "confirmed",
     };
 
     return labels[status] || status;
@@ -111,7 +112,7 @@ export default function SpecialistAppointments() {
                 </div>
               )}
 
-              {a.status === "SCHEDULED" && (
+              {["SCHEDULED", "CONFIRMED"].includes(a.status) && (
                 <div className="flex flex-wrap gap-2 mt-3">
                   <button
                     onClick={() => updateAppointmentStatus(a.id, "COMPLETED")}
