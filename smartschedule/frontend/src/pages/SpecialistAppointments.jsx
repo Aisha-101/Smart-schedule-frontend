@@ -7,6 +7,8 @@ export default function SpecialistAppointments() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
+  const [appointmentToCancel, setAppointmentToCancel] = useState(null);
+  
   const formatDate = (value) => {
     if (!value) return "-";
     const str = String(value);
@@ -27,13 +29,18 @@ export default function SpecialistAppointments() {
     setError("");
 
     try {
-      const res = await API.get("/appointments/my");
-      setAppointments(res.data);
+        const res = await API.get("/appointments/my");
+
+        const sorted = [...res.data].sort(
+        (a, b) => new Date(b.start_time) - new Date(a.start_time)
+        );
+
+        setAppointments(sorted);
     } catch (err) {
-      console.log(err.response?.data);
-      setError(err.response?.data?.message || "Failed to load appointments.");
+        console.log(err.response?.data);
+        setError(err.response?.data?.message || "Failed to load appointments.");
     }
-  };
+    };
 
   const statusLabel = (status) => {
     const labels = {
@@ -104,6 +111,16 @@ export default function SpecialistAppointments() {
               </div>
 
               <div className="text-sm">👤 Client: {a.client?.name || "-"}</div>
+              <div className="text-sm">
+                ⭐ Client reliability:{" "}
+                {a.client_reliability !== undefined ? a.client_reliability : "-"}
+              </div>
+              <div className="text-sm">
+                ✂️ Services:{" "}
+                {a.services?.length > 0
+                    ? a.services.map((service) => service.name).join(", ")
+                    : "-"}
+              </div>
               <div className="text-sm">📍 Status: {a.status}</div>
 
               {a.status === "LATE" && (
@@ -134,12 +151,59 @@ export default function SpecialistAppointments() {
                   >
                     No-show
                   </button>
+
+                  <button
+                    onClick={() => setAppointmentToCancel(a)}
+                    className="bg-gray-700 text-white px-3 py-1 rounded hover:bg-gray-800 transition"
+                    >
+                    Cancel
+                    </button>
                 </div>
               )}
             </div>
           ))
         )}
       </div>
+      {appointmentToCancel && (
+            <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+                <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-sm">
+                <h3 className="text-lg font-semibold mb-2">Cancel Appointment</h3>
+
+                <p className="text-sm text-gray-600 mb-4">
+                    Are you sure you want to cancel this appointment? The client will be
+                    informed by email.
+                </p>
+
+                <div className="text-sm text-gray-700 mb-4">
+                    📅 {formatDate(appointmentToCancel.start_time)}
+                    <br />
+                    ⏰ {formatTime24(appointmentToCancel.start_time)} -{" "}
+                    {formatTime24(appointmentToCancel.end_time)}
+                    <br />
+                    👤 Client: {appointmentToCancel.client?.name || "-"}
+                </div>
+
+                <div className="flex justify-end gap-2">
+                    <button
+                    onClick={() => setAppointmentToCancel(null)}
+                    className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+                    >
+                    Keep Appointment
+                    </button>
+
+                    <button
+                    onClick={async () => {
+                        await updateAppointmentStatus(appointmentToCancel.id, "CANCELED");
+                        setAppointmentToCancel(null);
+                    }}
+                    className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+                    >
+                    Cancel Appointment
+                    </button>
+                </div>
+                </div>
+            </div>
+        )}
     </MainLayout>
   );
 }

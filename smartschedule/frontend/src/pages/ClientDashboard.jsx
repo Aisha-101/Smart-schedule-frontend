@@ -28,6 +28,8 @@ export default function ClientDashboard() {
   const [serviceIds, setServiceIds] = useState([]);
   const [specialistId, setSpecialistId] = useState("");
 
+  const [alternativeDayInfo, setAlternativeDayInfo] = useState(null);
+
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
@@ -160,17 +162,20 @@ export default function ClientDashboard() {
 
       const alternative = payload.alternative_day_slots;
 
-      if (alternative?.slots) {
+      if (alternative?.slots?.length > 0) {
+        setAlternativeDayInfo(alternative);
         setAlternativeDaySlots(alternative.slots);
-      } else if (Array.isArray(alternative)) {
+      } else if (Array.isArray(alternative) && alternative.length > 0) {
+        setAlternativeDayInfo(null);
         setAlternativeDaySlots(alternative);
       } else {
+        setAlternativeDayInfo(alternative || null);
         setAlternativeDaySlots([]);
       }
 
-      if ((payload.slots || []).length === 0) {
+    if ((payload.slots || []).length === 0) {
         setMessage("No available slots found for the selected date.");
-      } else {
+    } else {
         setMessage("Available times loaded successfully.");
       }
     } catch (err) {
@@ -384,7 +389,13 @@ export default function ClientDashboard() {
               type="date"
               value={date}
               min={tomorrowString}
-              onChange={(e) => setDate(e.target.value)}
+              onChange={(e) => {
+                setDate(e.target.value);
+                setRecommendedSlots([]);
+                setRecommendationWarnings([]);
+                setAlternativeDaySlots([]);
+                setAlternativeDayInfo(null);
+              }}
               className="border p-2 w-full rounded bg-white"
             />
             {date && <small className="text-gray-600">{formatDate(date)}</small>}
@@ -457,28 +468,66 @@ export default function ClientDashboard() {
         </div>
       </div>
 
-      {alternativeDaySlots.length > 0 && (
+      {alternativeDayInfo && alternativeDaySlots.length === 0 && (
         <div className="bg-white p-6 rounded-lg shadow mb-6">
-          <h2 className="text-lg font-semibold mb-4">
-            Alternative Day Suggestions
-          </h2>
-
-          {alternativeDaySlots.map((slot, i) => (
-            <div
-              key={`alt-${i}`}
-              className="border p-4 mb-3 rounded-lg bg-indigo-50 border-indigo-300"
-            >
-              <div className="font-semibold text-gray-800">
-                📅 {formatDateFromDateTime(slot.start)}
-              </div>
-              <div className="text-sm text-gray-700 mt-1">
-                🕐 {formatTime24(slot.start)} - {formatTime24(slot.end)}
-              </div>
-            </div>
-          ))}
+            <h2 className="text-lg font-semibold mb-4">Alternative Day Suggestions</h2>
+            <p className="text-gray-500 italic">
+            {alternativeDayInfo.message || "No alternative availability found."}
+            </p>
         </div>
-      )}
+        )}
 
+        {alternativeDaySlots.length > 0 && (
+        <div className="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 className="text-lg font-semibold mb-4">
+            Alternative Day Suggestions
+            </h2>
+
+            {alternativeDayInfo?.date && (
+            <p className="text-sm text-gray-600 mb-4">
+                Nearest available day: <strong>{alternativeDayInfo.date}</strong>
+            </p>
+            )}
+
+            {alternativeDaySlots.map((slot, i) => (
+            <div
+                key={`alt-${i}`}
+                className={`border p-4 mb-3 rounded-lg ${
+                    slot.score > 0.8
+                        ? "bg-green-50 border-green-300"
+                        : slot.score > 0.6
+                        ? "bg-yellow-50 border-yellow-300"
+                        : "bg-red-50 border-red-300"
+                }`}
+            >
+                <div className="flex justify-between items-center gap-3">
+                <div>
+                    <div className="font-semibold text-gray-800">
+                    📅 {formatDateFromDateTime(slot.start)}
+                    </div>
+                    <div className="text-sm text-gray-700 mt-1">
+                    🕐 {formatTime24(slot.start)} - {formatTime24(slot.end)}
+                    </div>
+                    <div className="text-sm text-gray-700">⭐ Score: {slot.score}</div>
+                </div>
+
+                <button
+                    onClick={() => {
+                    if (mode === "reschedule") {
+                        rescheduleSlot(slot);
+                    } else {
+                        bookSlot(slot);
+                    }
+                    }}
+                    className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 transition"
+                >
+                    {mode === "reschedule" ? "Choose New Time" : "Book This Slot"}
+                </button>
+                </div>
+            </div>
+            ))}
+        </div>
+        )}
       <div className="bg-white p-6 rounded-lg shadow mb-6">
         <h2 className="text-lg font-semibold mb-4">Calendar View</h2>
 

@@ -35,7 +35,11 @@ export default function ClientAppointments() {
 
     try {
       const res = await API.get("/appointments/my");
-      setAppointments(res.data);
+      const sorted = [...res.data].sort(
+        (a, b) => new Date(b.start_time) - new Date(a.start_time)
+      );
+
+      setAppointments(sorted);
     } catch (err) {
       console.log(err.response?.data);
       setError(err.response?.data?.message || "Failed to load appointments.");

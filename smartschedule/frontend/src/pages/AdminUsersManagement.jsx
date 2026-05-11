@@ -9,6 +9,7 @@ export default function AdminUsersManagement() {
   const [users, setUsers] = useState([]);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [userToDelete, setUserToDelete] = useState(null);
 
   const loadUsers = async () => {
     try {
@@ -55,13 +56,44 @@ export default function AdminUsersManagement() {
             <div className="text-sm">Role: {u.role}</div>
             <div className="text-sm">Email verified: {u.email_verified_at ? "Yes" : "No"}</div>
             <button
-              onClick={() => deleteUser(u.id)}
+              onClick={() => setUserToDelete(u)}
               className="mt-3 bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
             >
               Delete user
             </button>
           </div>
         ))
+      )}
+      {userToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-sm">
+            <h3 className="text-lg font-semibold mb-2">Delete User</h3>
+
+            <p className="text-sm text-gray-600 mb-4">
+              Are you sure you want to delete{" "}
+              <strong>{userToDelete.name}</strong>? This action cannot be undone.
+            </p>
+
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setUserToDelete(null)}
+                className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={async () => {
+                  await deleteUser(userToDelete.id);
+                  setUserToDelete(null);
+                }}
+                className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </MainLayout>
   );
