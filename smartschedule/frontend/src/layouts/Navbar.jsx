@@ -33,7 +33,10 @@ export default function Navbar() {
 
       <div className="space-x-4">       
         {user?.role === "ADMIN" && (
-          <button onClick={() => nav("/admin")}>Admin</button>
+          <>
+            <button onClick={() => nav("/admin")}>Admin Dashboard</button>
+            <button onClick={() => nav("/admin/users")}>User control</button>
+          </>
         )}
 
         {user?.role === "SPECIALIST" && (
@@ -70,6 +73,12 @@ export default function Navbar() {
           </>         
         )}
 
+        {user && (
+          <Link to="/me" className="text-gray-700 hover:text-blue-600">
+            My Profile
+          </Link>
+        )}
+        
         <button onClick={logout} className="text-red-500" disabled={isLoggingOut}> 
           {isLoggingOut ? "Logging out..." : "Logout"}
         </button>

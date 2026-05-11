@@ -17,6 +17,8 @@ import ClientAppointments from "./pages/ClientAppointments";
 import SpecialistAppointments from "./pages/SpecialistAppointments";
 import SpecialistSchedule from "./pages/SpecialistSchedule";
 import AppointmentEmailConfirm from "./pages/AppointmentEmailConfirm";
+import AdminUsersPage from "./pages/AdminUsersManagement";
+import MyProfile from "./pages/MyProfile";
 
 
 function App() {
@@ -38,6 +40,9 @@ function App() {
         <Route path="/specialist/appointments" element={<SpecialistAppointments />} />
         <Route path="/specialist/schedule" element={<SpecialistSchedule />} />
         <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/admin/users" element={<AdminUsersPage />} />
+        <Route path="/me" element={<MyProfile />} />
+
         <Route
           path="/my-appointments"
           element={

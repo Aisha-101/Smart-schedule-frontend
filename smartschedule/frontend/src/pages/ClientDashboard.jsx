@@ -342,7 +342,7 @@ export default function ClientDashboard() {
               <option value="">Select Specialist</option>
               {specialists.map((s) => (
                 <option key={s.id} value={s.id}>
-                  {s.name}
+                  {s.name} {s.specialist?.specialization ? `· ${s.specialist.specialization}` : ""}
                 </option>
               ))}
             </select>
